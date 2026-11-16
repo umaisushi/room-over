@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ROOM OVER!</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{--ink:#111;--paper:#fffdf4;--bg:#e6e1d3;--red:#d8141c;--yel:#ffe500;--blue:#1565c0;--mut:#6b675c}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo","Noto Sans JP",sans-serif;font-size:14px;line-height:1.5}
+#app{max-width:1080px;margin:0 auto;padding:10px;min-height:100vh}
+h1,h2,h3{margin:0;font-weight:900}
+button{font:inherit;font-weight:800;cursor:pointer;border:2px solid var(--ink);background:var(--ink);color:#fff;padding:.4em .8em;border-radius:0}
+button:hover{background:#333}
+button.red{background:var(--red);border-color:var(--red)}
+button.red:hover{background:#b30f15}
+button.ghost{background:var(--paper);color:var(--ink)}
+button.ghost:hover{background:#f1ecd9}
+button:disabled{opacity:.35;cursor:not-allowed}
+button:focus-visible{outline:3px solid var(--blue);outline-offset:1px}
+.paper{background:var(--paper);border:3px solid var(--ink)}
+/* menu */
+.menu{text-align:center;padding:26px 14px 30px;margin-top:4vh}
+.logo{display:inline-block;background:var(--yel);border:4px solid var(--ink);padding:.05em .35em;font-size:clamp(40px,11vw,96px);font-weight:900;letter-spacing:-.02em;transform:rotate(-2deg);box-shadow:8px 8px 0 var(--red)}
+.logo span{color:var(--red)}
+.catch{font-size:clamp(15px,3vw,22px);font-weight:900;margin:22px 0 4px}
+.sub{color:var(--mut);margin-bottom:20px}
+.mrow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.mrow button{font-size:18px;padding:.6em 1.3em}
+.lv{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:18px;text-align:left}
+.lv button{background:var(--paper);color:var(--ink);padding:12px;text-align:left;font-weight:500}
+.lv button:hover{background:var(--yel)}
+.lv b{display:block;font-size:22px;font-weight:900}
+/* header */
+.hd{display:flex;flex-wrap:wrap;align-items:stretch}
+.hd .ttl{background:var(--yel);padding:6px 12px;font-weight:900;font-size:22px;border-right:3px solid var(--ink);display:flex;align-items:center}
+.hd .ttl span{color:var(--red)}
+.st{padding:5px 12px;border-right:1px solid #bbb;flex:1 1 auto}
+.st small{display:block;color:var(--mut);font-size:11px;font-weight:700}
+.st b{font-size:17px;font-weight:900;white-space:nowrap}
+.st b.neg{color:var(--red)}
+.hd .acts{display:flex;gap:6px;padding:6px;align-items:center}
+.trend{margin-top:8px;padding:6px 10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.trend>b{background:var(--red);color:#fff;padding:1px 8px;font-weight:900}
+.tg{border:1.5px solid var(--red);color:var(--red);padding:0 6px;font-weight:800;font-size:12px;background:#fff}
+.news{margin-top:8px;padding:8px 10px;border-left:10px solid var(--yel)}
+.news ul{margin:2px 0 0;padding-left:1.2em}
+.tabs{display:flex;gap:4px;margin-top:10px;flex-wrap:wrap}
+.tabs button{background:var(--paper);color:var(--ink);border-bottom-width:0;padding:.5em .9em}
+.tabs button.on{background:var(--ink);color:#fff}
+.body{padding:12px;border-top-width:3px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.card{border:2px solid var(--ink);background:#fff;padding:8px;display:flex;flex-direction:column;gap:5px;position:relative}
+.card h3{font-size:15px}
+.plan{width:100%;height:auto;max-height:230px;background:#fff;display:block}
+.meta{font-size:12px;color:var(--mut)}
+.price{font-size:20px;font-weight:900;color:var(--red)}
+.price small{font-size:12px;color:var(--ink)}
+.bd{display:inline-block;padding:0 7px;font-size:12px;font-weight:900;border:2px solid var(--ink);margin-right:3px}
+.bd.rent{background:var(--ink);color:#fff}.bd.list{background:var(--yel)}.bd.sale{background:var(--blue);border-color:var(--blue);color:#fff}
+.bd.bad{background:var(--red);border-color:var(--red);color:#fff}.bd.new{border-color:var(--blue);color:var(--blue)}
+.row{display:flex;gap:5px;flex-wrap:wrap;margin-top:auto}
+.row button{font-size:13px;padding:.3em .6em}
+details{font-size:12px}summary{cursor:pointer;color:var(--blue);font-weight:700}
+details ul{margin:3px 0;padding-left:1.2em}
+.stamp{position:absolute;top:34px;right:8px;border:3px solid var(--red);color:var(--red);font-weight:900;font-size:20px;padding:0 8px;transform:rotate(-12deg);background:rgba(255,255,255,.85);pointer-events:none}
+.full{background:var(--red);color:#fff;font-weight:900;padding:1px 10px;transform:rotate(-2deg);display:inline-block}
+.note{color:var(--mut);font-size:12px;margin:0 0 10px}
+.stars{color:#e59a00;letter-spacing:-1px;font-size:15px}
+/* modal */
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-start;justify-content:center;padding:14px;overflow:auto;z-index:20}
+#modal.on{display:flex}
+.mbox{background:var(--paper);border:4px solid var(--ink);width:min(100%,900px);padding:14px;box-shadow:8px 8px 0 var(--yel)}
+.mbox h2{font-size:20px;border-bottom:3px solid var(--ink);padding-bottom:4px;margin-bottom:10px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.ed{display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:14px}
+@media(max-width:680px){.ed{grid-template-columns:1fr}}
+.catrow{margin-bottom:7px}
+.catrow>b{display:block;font-size:12px;border-left:6px solid var(--ink);padding-left:6px;margin-bottom:3px}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{background:#fff;color:var(--ink);font-weight:600;font-size:12px;padding:.25em .55em;border-width:1.5px}
+.chip:hover{background:#f1ecd9}
+.chip.on{background:var(--ink);color:#fff}
+.chip small{opacity:.7;margin-left:4px}
+.chip i{font-style:normal;color:var(--red);font-weight:900;margin-left:4px}
+.chip.on i{color:var(--yel)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:1px 10px;font-size:13px;margin:8px 0}
+.kv dt{color:var(--mut);font-weight:700}.kv dd{margin:0;font-weight:800;text-align:right}
+input[type=range]{width:100%}
+input[type=text]{font:inherit;border:2px solid var(--ink);padding:.3em .5em;background:#fff;width:100%}
+.cust{border:2px solid var(--ink);background:#fff;padding:8px;display:flex;gap:10px;align-items:center}
+.face{width:44px;height:44px;border-radius:50%;border:2px solid var(--ink);display:grid;place-items:center;font-weight:900;font-size:18px;flex:none}
+table{border-collapse:collapse;width:100%;background:#fff}
+th,td{border:1px solid #999;padding:3px 7px;font-size:13px;text-align:left}
+th{background:var(--ink);color:#fff}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+.log{max-height:420px;overflow:auto;background:#fff;border:2px solid var(--ink);padding:6px 10px;font-size:13px}
+.log div{border-bottom:1px dotted #bbb;padding:2px 0}.log small{color:var(--mut);margin-right:8px}
+.v3{border:2px solid var(--ink);background:#efe9d8;min-height:120px}
+.ge{display:grid;grid-template-columns:repeat(12,1fr);gap:1px;background:#888;border:2px solid var(--ink);touch-action:none;-webkit-user-select:none;user-select:none}
+.gc{aspect-ratio:1;font-size:9px;font-weight:800;display:grid;place-items:center;cursor:crosshair;overflow:hidden}
+.gc.em{background-image:radial-gradient(#ccc 1px,transparent 1px)!important;background-size:6px 6px}
+.swb{display:inline-block;width:46px;height:26px;border:1px solid #555;margin-right:8px;vertical-align:middle}
+.sw{display:inline-block;width:16px;height:16px;border:1px solid #555;margin-right:4px;vertical-align:-3px}
+.err{color:var(--red);font-weight:800;font-size:12px;margin-top:6px}
+.sec{margin:16px 0 6px;border-left:8px solid var(--red);padding-left:8px;font-size:17px}.sec:first-child{margin-top:0}
+.tg.lt{background:var(--yel);color:var(--ink);border-color:var(--ink)}
+button{transition:transform .06s,box-shadow .06s}
+button:active:not(:disabled){transform:translate(2px,2px) scale(.97)}
+button.red:not(:disabled){box-shadow:3px 3px 0 var(--ink)}
+button.red:active:not(:disabled){box-shadow:0 0 0 var(--ink);transform:translate(3px,3px)}
+.card{transition:transform .12s,box-shadow .12s}
+.card:hover{transform:translateY(-2px);box-shadow:4px 4px 0 var(--yel)}
+.news li{animation:slide .45s both}.news li:nth-child(2){animation-delay:.08s}.news li:nth-child(3){animation-delay:.16s}.news li:nth-child(n+4){animation-delay:.24s}
+@keyframes slide{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+.pulse{display:inline-block;animation:pulse .7s}
+@keyframes pulse{0%{transform:scale(1)}30%{transform:scale(1.25);background:var(--yel)}100%{transform:scale(1)}}
+#fx{position:fixed;inset:0;z-index:30;pointer-events:none;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;overflow:hidden}
+#fx.on{display:flex}
+.fxm{background:var(--ink);color:#fff;font-weight:900;font-size:clamp(28px,7vw,60px);padding:.05em .6em;box-shadow:8px 8px 0 var(--yel);animation:fxin 1.5s both}
+.fxd{font-weight:900;font-size:clamp(16px,4vw,28px);background:var(--paper);border:3px solid var(--ink);padding:0 .6em;animation:fxin 1.5s .08s both}
+.fxd.pos{color:#0a7d2c}.fxd.neg{color:var(--red)}
+.fxs{font-weight:900;font-size:clamp(28px,8vw,76px);color:var(--red);border:6px solid var(--red);padding:0 .3em;background:rgba(255,255,255,.92);animation:stamp 1.9s .2s both;white-space:nowrap}
+.fxs.bad{color:#fff;background:#111;border-color:#111}
+@keyframes fxin{0%{opacity:0;transform:translateY(-40px) scale(.7)}12%{opacity:1;transform:none}80%{opacity:1;transform:none}100%{opacity:0;transform:translateY(24px)}}
+@keyframes stamp{0%{opacity:0;transform:rotate(-8deg) scale(3.2)}12%{opacity:1;transform:rotate(-8deg) scale(.95)}18%{transform:rotate(-8deg) scale(1)}85%{opacity:1;transform:rotate(-8deg) scale(1)}100%{opacity:0;transform:rotate(-8deg) scale(1)}}
+.cf{position:fixed;top:-16px;width:10px;height:15px;animation:fall 1.5s linear both}
+@keyframes fall{to{transform:translateY(108vh) rotate(600deg)}}
+@keyframes fade{0%{opacity:0}15%,80%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.fxm,.fxd,.fxs{animation:fade 1.6s both}.cf,.pulse,.news li{animation:none}.cf{display:none}.card:hover{transform:none}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal"></div>
+<div id="fx"></div>
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const R=(a,b)=>a+Math.random()*(b-a),RI=(a,b)=>Math.floor(R(a,b+1)),pick=a=>a[RI(0,a.length-1)];
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x)),r1=x=>Math.round(x*10)/10;
+function yen(x){x=Math.round(x);const n=x<0;x=Math.abs(x);
+  const s=x>=10000?Math.floor(x/10000)+"億"+(x%10000?(x%10000).toLocaleString()+"万":""):x.toLocaleString()+"万";return(n?"-":"")+s+"円"}
+const man=x=>r1(x).toLocaleString()+"万円";
+
+/* ===== データ ===== */
+const CAT=[
+ {k:"door",n:"扉",items:[["合板ドア",5,1],["木製ドア",12,2],["防音ドア",25,3],["スマートロックドア",45,4]]},
+ {k:"floor",n:"床",items:[["クッションフロア",8,1],["畳（和室）",15,2],["オーク材フローリング",20,2],["ウォルナット無垢材",40,3],["大理石タイル",70,4],["パイン材フローリング",14,2],["メープル材フローリング",28,3],["チーク無垢材",46,3],["ヘリンボーン張り",58,4]]},
+ {k:"wall",n:"壁",items:[["白クロス",6,1],["珪藻土",18,2],["コンクリート打ちっぱなし",30,3],["デザインタイル",50,4],["織物調クロス（グレー）",9,1],["漆喰塗り",22,2],["土壁（黄土）",20,2],["レンガタイル",36,3],["石目タイル",44,4],["板張り",32,3]]},
+ {k:"kitchen",n:"キッチン",items:[["ミニキッチン",10,1],["壁付けキッチン",25,2],["対面キッチン",50,3],["アイランドキッチン",90,4]]},
+ {k:"stove",n:"コンロ",items:[["1口電気コンロ",3,1],["2口ガスコンロ",8,2],["3口ガスコンロ",15,3],["3口IH",28,4]]},
+ {k:"wash",n:"洗面台",items:[["コンパクト洗面",4,1],["独立洗面台",12,2],["シャンプードレッサー",22,3],["ホテルライク2ボウル",40,4]]},
+ {k:"toilet",n:"トイレ",items:[["普通便座",5,1],["温水洗浄便座",12,2],["タンクレストイレ",28,3],["全自動トイレ",45,4]]},
+ {k:"closet",n:"クローゼット",items:[["押入れ",4,1],["クローゼット",10,2],["ウォークインクローゼット",25,3],["シューズクローク付き",38,4]]},
+ {k:"window",n:"窓",items:[["単板ガラス窓",5,1],["複層ガラス窓",14,2],["出窓",22,3],["全面ガラス窓",48,4]]},
+ {k:"bath",n:"風呂",items:[["3点ユニットバス",8,1],["ユニットバス",20,2],["追い焚き付きバス",35,3],["浴室乾燥付きジェットバス",65,4]]},
+ {k:"shelf",n:"棚",items:[["棚なし",0,1],["オープン棚",5,2],["造作棚",15,3],["壁面収納",30,4]]}
+];
+const CK={};CAT.forEach(c=>{CK[c.k]=c;c.order=c.items.map((_,i)=>i).sort((a,b)=>c.items[a][1]-c.items[b][1])});
+const TATAMI=1;
+const LV={
+ small:{n:"Small",money:1500,pGood:.95,gem:1,hi:.8,lo:.8,mul:[.5,.65],noise:.3,age:[0,6],k:0,pDeath:.002,hint:2,
+   d:"いい間取りが毎回格安で買える。業者も優良ぞろい。流行は偏りなくまんべんなく。"},
+ nomal:{n:"Nomal",money:1000,pGood:.6,gem:.45,hi:.75,lo:.35,mul:[.8,1.15],noise:1.3,age:[0,20],k:1,pDeath:.004,hint:1,
+   d:"いい業者・いい間取りに会えるかは運しだい。見分けるのは少し難しい。流行はやや高級品寄り。"},
+ pro:{n:"Pro",money:700,pGood:.35,gem:.07,hi:.8,lo:.18,mul:[.95,1.5],noise:2.4,age:[6,35],k:2.5,pDeath:.007,hint:0,
+   d:"いい間取りにはほぼ会えない。業者は当たり外れが激しく、評判もあてにならない。流行は高級品に偏りまくる。"}
+};
+const GW=12,GH=8,LIVING="LRSU";
+const TPL=[
+ {n:"1R",t:"スタンダード1R",d:"いちばん小さくて安い基本形",r:["LLLKK","LLLKK","LLLBB","LLLTE"]},
+ {n:"1K",t:"スタンダード1K",d:"洗面と収納つきの単身向け",r:["LLLLKK","LLLLKK","LLLLBW","CCLLTE"]},
+ {n:"1LDK",t:"スタンダード1LDK",d:"寝室を分けた二人暮らし向け",r:["LLLLLKKK","LLLLLBBW","LLLLLBBW","RRRRCTEE","RRRRCTEE"]},
+ {n:"2LDK",t:"スタンダード2LDK",d:"南側に2部屋を並べたファミリー向け",r:["LLLLLLKKBB","LLLLLLKKBB","LLLLLLCCWT","LLLLLLCCWT","RRRRSSSSEE","RRRRSSSSEE"]},
+ {n:"3LDK",t:"スタンダード3LDK",d:"3部屋そろった広めのファミリー向け",r:["LLLLLKKUUU","LLLLLKKUUU","LLLLLBBUUU","LLLLLBBWWT","RRRRSSSSCT","RRRRSSSSCE","RRRRSSSSEE","RRRRSSSSEE"]},
+ {n:"1R",t:"縦長1R",d:"玄関から奥へ伸びる細長い部屋",r:["EKBB","TKLL","LLLL","LLLL","LLLL"]},
+ {n:"1K",t:"キッチン広々1K",d:"料理好き向けの大きなキッチン",r:["LLLLKK","LLLLKK","LLLLKK","CCLLBW","EELLBT"]},
+ {n:"1LDK",t:"L字リビング1LDK",d:"寝室を囲むL字の大きなリビング",r:["LLLLLLKK","LLLLLLKK","LLLRRRRC","LLLRRRRC","BBWRRRRE","BBTCCEEE"]},
+ {n:"2LDK",t:"コンパクト2LDK",d:"面積を抑えて2部屋を確保",r:["LLLLLKKK","LLLLLKKK","LLLLLBBW","RRRSSSCT","RRRSSSCE","RRRSSSEE"]},
+ {n:"2LDK",t:"振り分け2LDK",d:"リビングをはさんで2部屋が離れた人気の形",r:["RRRLLLLSSS","RRRLLLLSSS","RRRLLLLSSS","RRRLLLLSSS","CCKKKEEBBW","CCKKKEEBBT"]},
+ {n:"3LDK",t:"ワイドリビング3LDK",d:"横長の大きなリビングが主役",r:["LLLLLLLLKKKK","LLLLLLLLKKKK","LLLLLLLLBBWW","LLLLLLLLBBTC","RRRRSSSSUUUC","RRRRSSSSUUUE","RRRRSSSSUUUE"]}
+];
+const KIND=[["L","LDK・居間","#f3d9a4","L"],["R","居室1","#f6c7a0","1"],["S","居室2","#f2b6b0","2"],["U","居室3","#e0b8e8","3"],["K","キッチン","#ffe97a","K"],["B","浴室","#a9d8ee","浴"],["W","洗面","#c5e6f2","洗"],["T","トイレ","#cfe8d0","WC"],["C","収納","#d9d9d9","収"],["E","玄関","#bdbdbd","玄"],[".","なし（消す）","#ffffff",""]];
+const KC={};KIND.forEach(k=>KC[k[0]]=k);
+const DEF={};CAT.forEach(c=>DEF[c.k]=c.order[1]);
+const ltHit=u=>!!(G&&G.ltrend&&G.ltrend===typeName(u));
+function tplGrid(i,flip){return Array.from({length:GH},(_,y)=>{const src=TPL[i].r[y]||"";let r=flip?src.split("").reverse().join(""):src;return r.padEnd(GW,".")}).join("")}
+function rndGrid(i,pBad){let g=tplGrid(i,Math.random()<.5);if(Math.random()<pBad)g=g.replace(/C/g,"L").replace(/W/g,"B");return g}
+const at=(g,x,y)=>(x<0||y<0||x>=GW||y>=GH)?".":g[y*GW+x];
+const area=u=>u.grid.replace(/\./g,"").length;
+function typeName(u){const g=u.grid,b=["R","S","U"].filter(k=>g.includes(k)).length;
+  if(g.includes("L"))return b?b+"LDK":area(u)<23?"1R":"1K";return b?b+"K":"—"}
+const baseRent=u=>1.9+.185*area(u);
+const layoutBonus=g=>(g.includes("W")?4:0)+(g.includes("C")?4:0);
+function gridErr(g){const e=[];if(!/[LRSU]/.test(g))e.push("居間か居室が必要");
+  [["K","キッチン"],["B","浴室"],["T","トイレ"],["E","玄関"]].forEach(k=>{if(!g.includes(k[0]))e.push(k[1]+"が必要")});
+  if(g.replace(/\./g,"").length<12)e.push("12㎡以上が必要");return e}
+function edges(g){const outer=[],inner=[],seen={};
+  for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const k=at(g,x,y);if(k===".")continue;
+    [[0,-1,"n"],[1,0,"e"],[0,1,"s"],[-1,0,"w"]].forEach(([dx,dy,s])=>{const n=at(g,x+dx,y+dy);
+      if(n===".")outer.push({x,y,s,k});
+      else if(n!==k&&(s==="e"||s==="s")){const key=k<n?k+n:n+k,hub=/[LE]/.test(key)||key==="BW";const door=hub&&!seen[key];if(hub)seen[key]=1;inner.push({x,y,s,door})}})}
+  return{outer,inner}}
+function mig(u){if(u&&!u.grid)u.grid=tplGrid(u.type==null?1:u.type,!!u.flip);return u}
+const WALL3=["#f3f1ea","#e4d3ae","#a9a9a6","#7fa3bf","#b9b4ad","#f5f2ea","#d8b25a","#b8643c","#cfc6b4","#b98d5a"];
+/* ===== テクスチャ（すべて自動生成） ===== */
+const FT=[{t:"speck",c:"#e9e1cc"},{t:"tatami",c:"#cdd69c"},{t:"wood",c:"#c99a5b",v:.1},{t:"wood",c:"#6b4630",v:.14},{t:"marble",c:"#f2f2f4"},
+  {t:"wood",c:"#e3c08a",v:.06,knot:1},{t:"wood",c:"#ead7b4",v:.05},{t:"wood",c:"#a8703c",v:.12},{t:"herring",c:"#b98a55"}];
+const WT=[{t:"weave",c:"#f3f1ea"},{t:"grain",c:"#e4d3ae"},{t:"concrete",c:"#a9a9a6"},{t:"tile",c:"#7fa3bf"},{t:"weave",c:"#b9b4ad"},
+  {t:"plaster",c:"#f5f2ea"},{t:"grain",c:"#d8b25a"},{t:"brick",c:"#b8643c"},{t:"stone",c:"#cfc6b4"},{t:"wood",c:"#b98d5a",v:.08}];
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shade(hex,f){const n=parseInt(hex.slice(1),16),m=f<0?0:255,a=Math.abs(f),ch=v=>Math.round(v+(m-v)*a);return `rgb(${ch(n>>16)},${ch(n>>8&255)},${ch(n&255)})`}
+function drawTex(sp,seed){
+  const N=256,cv=document.createElement("canvas");cv.width=cv.height=N;const x=cv.getContext("2d"),r=rng(seed),c=sp.c||"#cccccc";
+  const noise=(a,n,sz)=>{for(let i=0;i<n;i++){x.fillStyle=(r()<.5?"rgba(0,0,0,":"rgba(255,255,255,")+(a*r()).toFixed(3)+")";const s=1+r()*(sz||2);x.fillRect(r()*N,r()*N,s,s)}};
+  const line=(x1,y1,x2,y2,st,w)=>{x.strokeStyle=st;x.lineWidth=w||1;x.beginPath();x.moveTo(x1,y1);x.lineTo(x2,y2);x.stroke()};
+  x.fillStyle=c;x.fillRect(0,0,N,N);
+  switch(sp.t){
+    case "wood":{const rows=sp.rows||8,h=N/rows;
+      for(let i=0;i<rows;i++){const a=r()*N,b=a+N*(.35+r()*.3);
+        [[a,b],[b,a+N]].forEach(([s,e])=>{x.fillStyle=shade(c,(r()-.5)*2*sp.v);x.fillRect(s,i*h,e-s,h);x.fillRect(s-N,i*h,e-s,h)});
+        for(let k=0;k<5;k++){const y=i*h+2+r()*(h-4),ph=r()*6.28,am=.5+r()*1.5,per=1+Math.floor(r()*3);
+          x.strokeStyle=`rgba(50,25,5,${(.05+r()*.1).toFixed(3)})`;x.lineWidth=.6+r();x.beginPath();x.moveTo(0,y+Math.sin(ph)*am);
+          for(let px=8;px<=N;px+=8)x.lineTo(px,y+Math.sin(px/N*6.283*per+ph)*am);x.stroke()}
+        if(sp.knot&&r()<.5){x.fillStyle="rgba(90,50,20,.55)";x.beginPath();x.ellipse(r()*N,i*h+h/2,4+r()*3,2+r()*2,0,0,6.283);x.fill()}
+        [a,b].forEach(j=>{const jx=((j%N)+N)%N;line(jx,i*h,jx,i*h+h,"rgba(0,0,0,.35)",1)});
+        line(0,i*h+.5,N,i*h+.5,"rgba(0,0,0,.3)",1)}
+      break}
+    case "herring":{const w=N/4,ph=N/8;
+      for(let ci=0;ci<4;ci++){const up=ci%2?1:-1;x.save();x.beginPath();x.rect(ci*w,0,w,N);x.clip();
+        for(let k=-3;k<11;k++){const y=k*ph;x.fillStyle=shade(c,(r()-.5)*.3);x.beginPath();x.moveTo(ci*w,y);x.lineTo(ci*w+w,y+up*w);x.lineTo(ci*w+w,y+up*w+ph);x.lineTo(ci*w,y+ph);x.closePath();x.fill();
+          x.strokeStyle="rgba(0,0,0,.3)";x.lineWidth=1;x.stroke()}
+        x.restore()}
+      noise(.05,1500);break}
+    case "tatami":{for(let y=0;y<N;y+=2)line(0,y+.5,N,y+.5,`rgba(80,100,30,${(.1+r()*.15).toFixed(3)})`,1);
+      for(let px=0;px<N;px+=16)line(px+.5,0,px+.5,N,"rgba(255,255,220,.12)",1);
+      x.fillStyle="#3f5a2a";x.fillRect(0,0,N,7);x.fillRect(0,N/2,N,7);break}
+    case "speck":noise(.14,3000);break;
+    case "marble":{noise(.03,1500,3);
+      for(let k=0;k<7;k++){x.strokeStyle=`rgba(110,110,125,${(.15+r()*.25).toFixed(3)})`;x.lineWidth=.6+r()*1.6;x.beginPath();let px=r()*N,py=r()*N;x.moveTo(px,py);
+        for(let j=0;j<6;j++){px+=(r()-.3)*70;py+=(r()-.5)*60;x.lineTo(px,py)}x.stroke()}
+      [0,N/2].forEach(p=>{line(0,p+.5,N,p+.5,"rgba(120,120,130,.5)",1);line(p+.5,0,p+.5,N,"rgba(120,120,130,.5)",1)});break}
+    case "weave":{for(let y=0;y<N;y+=4)for(let px=0;px<N;px+=4){const o=((px+y)/4)%2;x.fillStyle=o?"rgba(0,0,0,.09)":"rgba(255,255,255,.35)";if(o)x.fillRect(px,y+1,4,2);else x.fillRect(px+1,y,2,4)}break}
+    case "grain":{noise(.12,7000);for(let k=0;k<25;k++){x.fillStyle=r()<.5?"rgba(0,0,0,.04)":"rgba(255,255,255,.05)";x.beginPath();x.arc(r()*N,r()*N,10+r()*30,0,6.283);x.fill()}break}
+    case "plaster":{noise(.04,2500);for(let k=0;k<45;k++){x.strokeStyle=r()<.5?"rgba(255,255,255,.55)":"rgba(90,80,60,.09)";x.lineWidth=2+r()*4;const a0=r()*6.283;x.beginPath();x.arc(r()*N,r()*N,20+r()*50,a0,a0+.6+r());x.stroke()}break}
+    case "concrete":{for(let k=0;k<70;k++){x.fillStyle=r()<.5?"rgba(0,0,0,.05)":"rgba(255,255,255,.06)";x.beginPath();x.arc(r()*N,r()*N,8+r()*34,0,6.283);x.fill()}
+      noise(.07,3000);line(0,.5,N,.5,"rgba(0,0,0,.3)",1.5);line(.5,0,.5,N,"rgba(0,0,0,.3)",1.5);
+      [[.25,.25],[.75,.25],[.25,.75],[.75,.75]].forEach(p=>{x.fillStyle="rgba(40,40,40,.55)";x.beginPath();x.arc(p[0]*N,p[1]*N,4,0,6.283);x.fill()});break}
+    case "tile":{const n=sp.n||4,w=N/n;for(let i=0;i<n;i++)for(let j=0;j<n;j++){x.fillStyle=shade(c,(r()-.5)*.25);x.fillRect(i*w,j*w,w,w)}
+      for(let i=0;i<n;i++){line(i*w+.5,0,i*w+.5,N,"rgba(255,255,255,.8)",2.5);line(0,i*w+.5,N,i*w+.5,"rgba(255,255,255,.8)",2.5)}break}
+    case "brick":{x.fillStyle="#d9d2c4";x.fillRect(0,0,N,N);for(let j=0;j<8;j++)for(let i=-1;i<4;i++){const bx=i*64+(j%2?32:0);x.fillStyle=shade(c,(r()-.5)*.35);x.fillRect(bx+2,j*32+2,60,28)}
+      noise(.08,2500);break}
+    case "stone":{for(let j=0;j<4;j++){let px=-r()*60;while(px<N){const w=50+r()*60;x.fillStyle=shade(c,(r()-.5)*.3);x.fillRect(px,j*64,w,64);x.strokeStyle="rgba(60,55,45,.5)";x.lineWidth=1.5;x.strokeRect(px,j*64,w,64);px+=w}}
+      noise(.08,3000);break}
+  }
+  return cv;
+}
+const TEX={};
+(function(){
+  if(typeof document.createElement!=="function")return;
+  try{
+    const add=(k,sp,seed)=>{const cv=drawTex(sp,seed),s=document.createElement("canvas");s.width=s.height=64;s.getContext("2d").drawImage(cv,0,0,64,64);TEX[k]={cv,url:s.toDataURL("image/jpeg",.82)}};
+    FT.forEach((s,i)=>add("floor"+i,s,11+i));WT.forEach((s,i)=>add("wall"+i,s,71+i));
+    add("wet",{t:"tile",c:"#d3e6ee",n:8},5);add("ent",{t:"stone",c:"#c9c6bf"},6);add("wood",{t:"wood",c:"#e6dccb",v:.06,rows:4},7);
+    let css="",defs="";
+    Object.keys(TEX).forEach(k=>{css+=`.sx-${k}{background-image:url(${TEX[k].url});background-size:cover}`;
+      defs+=`<pattern id="p_${k}" patternUnits="userSpaceOnUse" width="40" height="40"><image href="${TEX[k].url}" width="40" height="40" preserveAspectRatio="none"/></pattern>`});
+    document.body.insertAdjacentHTML("beforeend",`<style>${css}</style><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${defs}</defs></svg>`);
+  }catch(e){}
+})();
+const swatch=(k,i,big)=>(k==="floor"||k==="wall")?`<span class="${big?"swb":"sw"} sx-${k}${i}"></span>`:"";
+const FLOORC=["#e9e1cc","#cdd69c","#c99a5b","#6b4630","#f2f2f4","#e3c08a","#ead7b4","#a8703c","#b98a55"],WALLC=["#222","#8a744e","#777","#1f4c73","#555","#333","#9a7a2a","#8a3f22","#6b6455","#6b4a2a"];
+const N1=["メゾン","コーポ","グラン","ハイツ","レジデンス","パレス","ヴィラ","シャトー"],N2=["さくら","みどり","ひかり","あおば","つばめ","コスモ","ルミエール","オリーブ","しらゆり","ことぶき","フォレスト","サンライズ"];
+const GYO=["まごころ不動産","駅前ハウジング","ニコニコ住建","大黒屋リアルティ","スピード土地建物","あおぞらホーム","ゴールド興産","港エステート","やまびこ住販","ミライ地所"];
+const SEI=["佐藤","鈴木","高橋","田中","伊藤","渡辺","山本","中村","小林","加藤","吉田","山田"];
+const REV_G=["対応が丁寧で説明もわかりやすい。","引き渡し後のフォローまでしっかり。","物件の欠点も正直に教えてくれた。"],
+      REV_B=["急かされて契約。あとから不具合が…","説明と実物がぜんぜん違った。","質問をはぐらかされた気がする。"],
+      REV_N=["ふつうでした。","可もなく不可もなく。","担当者による、という印象。"];
+const RANKS=[[100000,"ROOM OVER! レジェンド"],[30000,"不動産王"],[10000,"敏腕オーナー"],[4000,"中堅大家"],[0,"見習い大家"]];
+
+/* ===== 状態 ===== */
+let G=null,UI={menu:"top",tab:"my"},E=null,M=null,D=[];
+try{D=JSON.parse(localStorage.getItem("roomover_designs")||"[]")||[]}catch(e){D=[]}
+D.forEach(mig);
+function saveD(){try{localStorage.setItem("roomover_designs",JSON.stringify(D))}catch(e){}}
+function saveG(){try{if(G&&!G.over)localStorage.setItem("roomover_save",JSON.stringify(G));else localStorage.removeItem("roomover_save")}catch(e){}}
+function loadG(){try{return JSON.parse(localStorage.getItem("roomover_save")||"null")}catch(e){return null}}
+const ym=m=>`${Math.floor(m/12)+1}年目 ${m%12+1}月`;
+const L=()=>LV[G.lv];
+const unit=id=>G.units.find(u=>u.id==id);
+function log(t){G.log.unshift({m:G.month,t});if(G.log.length>120)G.log.pop()}
+
+/* ===== 物件の計算 ===== */
+function tier(n,t){return clamp(Math.round(t*(n-1)+(Math.random()+Math.random()+Math.random()-1.5)*1.2),0,n-1)}
+function randItems(t){const o={};CAT.forEach(c=>o[c.k]=c.order[tier(c.items.length,t)]);return o}
+function trendCount(u){if(!G)return 0;let n=0;CAT.forEach(c=>{if(G.trends[c.k]===u.items[c.k])n++});if(ltHit(u))n++;return n}
+function parts(u){
+  let q=0;CAT.forEach(c=>q+=c.items[u.items[c.k]][2]);
+  const p=[["設備グレード",Math.round((q-11)/33*60+20)]];
+  const lb=layoutBonus(u.grid);if(lb)p.push(["間取り（洗面・収納あり）",lb]);
+  const tc=trendCount(u);if(tc)p.push(["流行ポイント ×"+tc,tc*5]);
+  if(ltHit(u))p.push(["流行の間取り（"+G.ltrend+"）",5]);
+  if(u.age<60&&!u.accident)p.push(["築浅",10]);
+  const ap=Math.min(25,Math.floor(u.sinceReno/12)*1.5);if(ap)p.push([u.sinceReno<u.age?"リノベ後の経年":"築年数",-ap]);
+  if(G&&u.items.floor===TATAMI&&G.trends.floor!==TATAMI&&G.stale)p.push(["和室（流行遅れ）",-Math.min(10,G.stale)]);
+  if(u.defect)p.push(["施工不良・瑕疵",-12]);
+  if(u.accident)p.push(["事故物件",-30]);
+  return p;
+}
+const score=u=>clamp(Math.round(parts(u).reduce((s,p)=>s+p[1],0)),1,130);
+const fair=u=>r1(baseRent(u)*(.3+score(u)/60));
+const value=u=>Math.round(fair(u)*80);
+const itemsCost=(u,items)=>CAT.reduce((s,c)=>s+c.items[items[c.k]][1],0)*area(u)/40;
+function layoutCost(u,grid){if(!grid||grid===u.grid)return 0;let c=100;
+  for(let i=0;i<grid.length;i++)if(grid[i]!==u.grid[i])c+=(grid[i]==="."||u.grid[i]===".")?60:15;return c}
+function renoCost(u,items,grid){const a=grid?grid.replace(/\./g,"").length:area(u),af=a/40;let c=20+a;
+  CAT.forEach(k=>{if(items[k.k]!==u.items[k.k])c+=k.items[items[k.k]][1]*af});
+  return Math.round(c+layoutCost(u,grid))}
+function buildCost(grid,floors,items){const u={grid},a=area(u);return Math.round(500+a*12+floors*(a*9+itemsCost(u,items))+(floors>=4?600:0))}
+const buildTime=f=>12+Math.max(0,f-4);
+function rentChance(u,r){return clamp(.3*Math.pow(fair(u)/r,3)*(1+.15*trendCount(u)),.02,.95)}
+function saleChance(u,a){return clamp(.2*Math.pow(value(u)/a,4),.01,.9)}
+const mark=p=>p>=.6?"◎ とても高い":p>=.35?"○ 高い":p>=.15?"△ ふつう":"× 低い";
+function mkUnit(grid,items,age,sinceReno,name){return{id:G.nid++,name,grid,items,age,sinceReno,st:"vacant",rent:0,ask:0,stay:0,accident:false,defect:false}}
+const bname=()=>pick(N1)+pick(N2);
+const netWorth=()=>G.money+G.units.reduce((s,u)=>s+value(u),0)+G.builds.reduce((s,b)=>s+b.cost*.7,0);
+const rank=()=>RANKS.find(r=>netWorth()>=r[0])[1];
+
+/* ===== 間取り図 ===== */
+function plan(u){
+  const g=u.grid,S=20,it=u.items,fc=FLOORC[it.floor],wc=WALLC[it.wall],wa=it.floor===TATAMI?"和室":"洋室";
+  let x0=GW,y0=GH,x1=0,y1=0,s="",top="";const first={},sum={};
+  for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const k=at(g,x,y);if(k===".")continue;
+    x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y);const X=x*S,Y=y*S,liv=LIVING.includes(k);
+    const fill=(liv||k==="K")?`url(#p_floor${it.floor}) ${fc}`:k==="C"?"#fff":k==="E"?"url(#p_ent) #e3e3e3":"url(#p_wet) #dbe9f0";
+    s+=`<rect x="${X-.2}" y="${Y-.2}" width="${S+.4}" height="${S+.4}" fill="${fill}"/>`;
+    if(liv&&it.floor===TATAMI)s+=`<line x1="${X}" y1="${Y+S}" x2="${X+S}" y2="${Y+S}" stroke="#98a565" stroke-width=".7"/>`;
+    if(k==="C")s+=`<path d="M${X} ${Y}L${X+S} ${Y+S}M${X+S} ${Y}L${X} ${Y+S}" stroke="#aaa" stroke-width=".7"/>`;
+    if(!first[k])first[k]={X,Y};const m=sum[k]||(sum[k]=[0,0,0]);m[0]+=x+.5;m[1]+=y+.5;m[2]++}
+  if(x1<x0)return "";
+  const seg=e=>e.s==="n"?[e.x,e.y,e.x+1,e.y]:e.s==="s"?[e.x,e.y+1,e.x+1,e.y+1]:e.s==="w"?[e.x,e.y,e.x,e.y+1]:[e.x+1,e.y,e.x+1,e.y+1];
+  const ed=edges(g);let wi=0;const step=[4,3,2,1][it.window];
+  ed.inner.forEach(e=>{if(e.door)return;const p=seg(e);s+=`<line x1="${p[0]*S}" y1="${p[1]*S}" x2="${p[2]*S}" y2="${p[3]*S}" stroke="${wc}" stroke-width="1.6"/>`});
+  ed.outer.forEach(e=>{const p=seg(e);top+=`<line x1="${p[0]*S}" y1="${p[1]*S}" x2="${p[2]*S}" y2="${p[3]*S}" stroke="${wc}" stroke-width="3.2" stroke-linecap="square"/>`;
+    if(LIVING.includes(e.k)&&(wi++%step===0)){const h=e.s==="n"||e.s==="s";top+=`<line x1="${p[0]*S+(h?4:0)}" y1="${p[1]*S+(h?0:4)}" x2="${p[2]*S-(h?4:0)}" y2="${p[3]*S-(h?0:4)}" stroke="#2aa4e6" stroke-width="4.5"/>`}});
+  let f;
+  if(f=first.K){s+=`<rect x="${f.X+2}" y="${f.Y+2}" width="16" height="8" fill="#9a9a9a"/>`;const n=[1,2,3,3][it.stove];
+    for(let i=0;i<n;i++)s+=it.stove===3?`<rect x="${f.X+3+i*5}" y="${f.Y+4}" width="4" height="4" fill="#111"/>`:`<circle cx="${f.X+5+i*5}" cy="${f.Y+6}" r="1.8" fill="none" stroke="#b22" stroke-width="1"/>`}
+  if(f=first.B)s+=`<rect x="${f.X+3}" y="${f.Y+3}" width="14" height="14" rx="4" fill="#fff" stroke="#6a9bb0"/>`;
+  if(f=first.T)s+=`<ellipse cx="${f.X+10}" cy="${f.Y+9}" rx="4" ry="6" fill="#fff" stroke="#555"/>`;
+  if(f=first.W)s+=`<circle cx="${f.X+10}" cy="${f.Y+8}" r="4.5" fill="#fff" stroke="#555"/>`;
+  if(f=first.E)s+=`<path d="M${f.X+3} ${f.Y+S}A14 14 0 0 1 ${f.X+17} ${f.Y+S-14}L${f.X+17} ${f.Y+S}" fill="none" stroke="#111"/>`;
+  if((f=first.L)&&it.shelf>0)s+=`<rect x="${f.X+2}" y="${f.Y+2}" width="${[0,8,12,16][it.shelf]}" height="3" fill="#7a5a3a"/>`;
+  const big=typeName(u).includes("LDK");
+  Object.keys(sum).forEach(k=>{const m=sum[k];if(m[2]<2&&"BTWEK".includes(k))return;
+    const lb=k==="L"?(big?"LDK":wa):LIVING.includes(k)?wa:{K:"K",B:"浴室",W:"洗面",T:"WC",E:"玄関",C:"CL"}[k];
+    s+=`<text x="${m[0]/m[2]*S}" y="${m[1]/m[2]*S+4}" font-size="${k==="L"?12:8}" font-weight="700" text-anchor="middle" fill="#111" paint-order="stroke" stroke="#fff" stroke-width="2.5" stroke-opacity=".7">${lb}</text>`});
+  return `<svg class="plan" viewBox="${x0*S-5} ${y0*S-5} ${(x1-x0+1)*S+10} ${(y1-y0+1)*S+10}" role="img" aria-label="${typeName(u)}の間取り図">${s}${top}</svg>`;
+}
+function equip(u){return `<details><summary>設備を見る</summary><ul>${CAT.map(c=>`<li>${c.n}：${c.items[u.items[c.k]][0]}${G&&G.trends[c.k]===u.items[c.k]?' <b style="color:#d8141c">流行</b>':""}</li>`).join("")}</ul></details>`}
+function scoreBox(u){return `<details><summary>魅力スコア ${score(u)} の内訳</summary><ul>${parts(u).map(p=>`<li>${p[0]}：${p[1]>0?"+":""}${p[1]}</li>`).join("")}</ul></details>`}
+
+/* ===== 演出・効果音 ===== */
+let fxLabel="",fxTimer=0,ac=null,muted=false;
+try{muted=localStorage.getItem("roomover_mute")==="1"}catch(e){}
+const SND={click:[[700,.04,"square",.04]],month:[[440,.08],[587,.12]],good:[[659,.09],[784,.09],[1047,.2]],bad:[[196,.2,"sawtooth",.1],[147,.4,"sawtooth",.1]],full:[[523,.1],[659,.1],[784,.1],[1047,.12],[1319,.35]]};
+function beep(seq){
+  if(muted||typeof window==="undefined")return;
+  try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;ac=ac||new AC();if(ac.state==="suspended")ac.resume();let t=ac.currentTime;
+    seq.forEach(([f,d,type,vol])=>{const o=ac.createOscillator(),g=ac.createGain();o.type=type||"triangle";o.frequency.value=f;
+      g.gain.setValueAtTime(vol||.12,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+d+.02);t+=d*.75})}catch(e){}
+}
+function monthFx(becameFull){
+  const n=G.news.join(" "),net=r1(G.last.inc-G.last.cost);let lab=fxLabel,kind="",snd=SND.month,conf=false;fxLabel="";
+  if(G.over){lab="倒産…";kind="bad";snd=SND.bad}
+  else if(n.includes("☠")){lab="事故物件…";kind="bad";snd=SND.bad}
+  else if(becameFull){lab="満室！ ROOM OVER!!";snd=SND.full;conf=true}
+  else if(n.includes("🔑")){lab="入居決定！";snd=SND.good}
+  else if(n.includes("🤝")){lab="売却！";snd=SND.good;conf=true}
+  else if(n.includes("🏢 ")&&n.includes("完成")){lab="完成！";snd=SND.good;conf=true}
+  else if(lab==="成約！"||lab==="売却！"){snd=SND.good;conf=lab==="売却！"}
+  else if(n.includes("⚠")){lab=lab||"資金ショート！";kind="bad";snd=SND.bad}
+  else if(!lab&&n.includes("📣"))lab="流行チェンジ！";
+  beep(snd);
+  const f=$("fx");if(!f)return;
+  let cf="";if(conf){const cols=["#d8141c","#ffe500","#1565c0","#111","#0a7d2c"];
+    for(let i=0;i<36;i++)cf+=`<i class="cf" style="left:${(Math.random()*100).toFixed(1)}vw;background:${cols[i%5]};animation-delay:${(Math.random()*.5).toFixed(2)}s;animation-duration:${(1.1+Math.random()*.8).toFixed(2)}s"></i>`}
+  f.innerHTML=`<div class="fxm">${ym(G.month)}</div><div class="fxd ${net>=0?"pos":"neg"}">今月の収支 ${net>=0?"+":""}${net.toLocaleString()}万円</div>${lab?`<div class="fxs ${kind}">${lab}</div>`:""}${cf}`;
+  f.classList.remove("on");void f.offsetWidth;f.classList.add("on");
+  clearTimeout(fxTimer);fxTimer=setTimeout(()=>{f.classList.remove("on");f.innerHTML=""},2100);
+}
+/* ===== 進行 ===== */
+function newTrends(first){
+  const k=L().k,cats=CAT.slice().sort(()=>Math.random()-.5).slice(0,5);G.trends={};
+  cats.forEach(c=>{const w=c.items.map(i=>Math.pow(i[1]+1,k));let r=Math.random()*w.reduce((a,b)=>a+b,0),i=0;
+    while(r>w[i]&&i<w.length-1){r-=w[i];i++}G.trends[c.k]=i});
+  if(G.trends.floor===TATAMI)G.stale=0;else if(!first)G.stale++;
+  {const ts=[["1R",5.6],["1K",6.5],["1LDK",9.3],["2LDK",13],["3LDK",16.7]],w=ts.map(t=>Math.pow(t[1],k));let r=Math.random()*w.reduce((a,b)=>a+b,0),i=0;
+    while(r>w[i]&&i<ts.length-1){r-=w[i];i++}G.ltrend=ts[i][0]}
+  if(!first)log("📣 新しい年！流行が入れ替わった：間取り「"+G.ltrend+"」、"+trendNames().join("、"));
+}
+const trendNames=()=>CAT.filter(c=>G.trends[c.k]!=null).map(c=>c.items[G.trends[c.k]][0]);
+function genOffer(){
+  const l=L(),good=Math.random()<l.pGood,gem=Math.random()<l.gem,grid=rndGrid(RI(0,TPL.length-1),gem?0:.6);
+  const age=RI(l.age[0],l.age[1])*12+RI(0,11),u={id:0,name:bname()+" "+RI(1,9)+"F",grid,items:randItems(gem?l.hi:l.lo),age,
+    sinceReno:Math.random()<.25?RI(0,Math.min(age,60)):age,flip:Math.random()<.5,st:"vacant",rent:0,ask:0,stay:0,accident:false,defect:false};
+  const v=value(u),price=Math.round(v*R(l.mul[0],l.mul[1])*(good?1:1.1));
+  const stars=clamp(r1((good?4.4:2.2)+(Math.random()*2-1)*l.noise),1,5);
+  const o={u,price,gyo:pick(GYO),stars,hd:!good&&Math.random()<.6,ha:!good&&Math.random()<(G.lv==="pro"?.3:.18)};
+  o.rev=l.hint===0?pick(REV_G.concat(REV_B,REV_N)):stars>=3.8?pick(REV_G):stars<=2.6?pick(REV_B):pick(REV_N);
+  o.hint=l.hint===2?`査定額 約${yen(v)}（お買い得！）`:l.hint===1?`査定額 ${yen(v*R(.75,.95))}〜${yen(v*R(1.05,1.3))}`:"査定額：不明（自分の目で見極めろ）";
+  return o;
+}
+function genCust(){
+  const buy=Math.random()<.3,t={base:pick([5.6,6.5,9.3,13,16.7])},pk=pick(CAT.map(c=>c.k).concat(["trend","trend","new","new"]));
+  const b=t.base*R(.9,2);
+  return{name:pick(SEI)+"さん",buy,pref:pk,budget:buy?Math.round(b*85):r1(b),accOK:Math.random()<.15,hue:RI(0,359)};
+}
+const prefText=c=>c.pref==="trend"?"流行りの部屋に住みたい":c.pref==="new"?"きれいで新しい部屋がいい":CK[c.pref].n+"にこだわりたい";
+function custAsk(u,c){return c.buy?Math.round(value(u)*1.1):(u.st==="list"?u.rent:fair(u))}
+function match(u,c){
+  let m=.45;const ask=custAsk(u,c);
+  if(c.pref==="trend"){const n=trendCount(u);m+=n>=2?.3:n===0?-.2:0}
+  else if(c.pref==="new")m+=u.sinceReno<36?.3:u.sinceReno>120?-.2:0;
+  else{const q=CK[c.pref].items[u.items[c.pref]][2];m+=q>=3?.3:q<=1?-.2:0}
+  m+=ask<=c.budget?.25:-(ask/c.budget-1)*2;
+  if(u.accident)m+=c.accOK?.1:-.6;
+  return clamp(m,.02,.97);
+}
+function advance(){
+  const l=L();G.month++;G.news=[];
+  const say=t=>{G.news.push(t);log(t)};
+  let inc=0,cost=0;
+  const all=G.units.length>=2&&G.units.every(u=>u.st==="rent");
+  G.units.slice().forEach(u=>{
+    u.age++;u.sinceReno++;cost+=1;
+    if(u.st==="rent"){inc+=u.rent;u.stay++;
+      if(Math.random()<l.pDeath){u.accident=true;u.st="vacant";cost+=30;say(`☠ ${u.name} で入居者が亡くなった…事故物件になり、特殊清掃に30万円かかった。`)}
+      else if(u.stay>12&&Math.random()<.04){u.st="vacant";say(`📦 ${u.name} の入居者が退去した。`)}
+    }else if(u.st==="list"){if(Math.random()<rentChance(u,u.rent)){u.st="rent";u.stay=0;say(`🔑 ${u.name} に入居が決まった！（家賃 ${man(u.rent)}）`)}}
+    else if(u.st==="sale"){if(Math.random()<saleChance(u,u.ask)){G.money+=u.ask;G.units=G.units.filter(x=>x!==u);say(`🤝 ${u.name} が ${yen(u.ask)} で売れた！`)}}
+  });
+  if(all){const b=r1(inc*.05);inc+=b;say(`🈵 満室ボーナス！ +${man(b)}`)}
+  if(G.office)cost+=5;
+  G.builds=G.builds.filter(b=>{b.left--;if(b.left>0)return true;
+    for(let f=1;f<=b.floors;f++)G.units.push(mkUnit(b.grid,Object.assign({},b.items),0,0,`${b.name} ${f}F`));
+    say(`🏢 ${b.name}（${b.floors}階建て）が完成！ ${b.floors}部屋が手に入った。`);return false});
+  G.money=r1(G.money+inc-cost);G.last={inc:r1(inc),cost:r1(cost)};
+  if(G.month%12===0){newTrends(false);G.news.push("📣 流行が入れ替わった！")}
+  G.offers=[genOffer(),genOffer(),genOffer()];
+  G.cust=G.office?Array.from({length:RI(2,3)},genCust):[];
+  G.neg=G.money<0?G.neg+1:0;
+  if(G.neg===1)say("⚠ 資金がマイナスに。6ヶ月続くと倒産です。");
+  if(G.neg>=6){G.over=true}
+  const fullNow=G.units.length>=2&&G.units.every(u=>u.st==="rent"),became=fullNow&&!G.wasFull;G.wasFull=fullNow;
+  saveG();closeModal();UI.pulse=true;render();UI.pulse=false;monthFx(became);
+}
+function start(lv){
+  G={lv,month:0,money:LV[lv].money,units:[],nid:1,offers:[],office:false,cust:[],builds:[],trends:{},stale:0,log:[],news:[],neg:0,over:false,last:{inc:0,cost:0}};
+  newTrends(true);
+  const age=RI(10,20)*12,u=mkUnit(rndGrid(RI(1,3),.5),randItems(.3),age,age,bname()+" "+RI(2,8)+"F");G.units.push(u);
+  G.offers=[genOffer(),genOffer(),genOffer()];
+  G.news=[`ようこそ！ あなたは ${u.name}（${typeName(u)}）を1層持っています。まずはリノベーションをして、賃貸サイトに掲載しよう。`];
+  log("ゲーム開始（"+LV[lv].n+"）");UI.tab="my";saveG();render();
+}
+
+/* ===== 画面 ===== */
+function render(){
+  if(!G){$("app").innerHTML=menuHTML();return}
+  const nw=netWorth(),rented=G.units.filter(u=>u.st==="rent").length,full=G.units.length>=2&&rented===G.units.length;
+  const tabs=[["my","物件"],["market","業者から買う"],["build","建てる"],["office","事務所"],["catalog","カタログ"],["log","記録"]];
+  $("app").innerHTML=`
+  <div class="paper hd">
+    <div class="ttl">ROOM&nbsp;<span>OVER!</span></div>
+    <div class="st"><small>${L().n}</small><b>${ym(G.month)}</b></div>
+    <div class="st"><small>資金</small><b class="${G.money<0?"neg":""}${UI.pulse?" pulse":""}">${yen(G.money)}</b></div>
+    <div class="st"><small>総資産（${rank()}）</small><b>${yen(nw)}</b></div>
+    <div class="st"><small>入居 / 部屋数</small><b>${rented} / ${G.units.length}</b> ${full?'<span class="full">満室！</span>':""}</div>
+    <div class="st"><small>先月の収支</small><b>+${r1(G.last.inc)} / -${r1(G.last.cost)}万</b></div>
+    <div class="acts"><button class="red" data-act="next">何もせず翌月へ ▶</button><button class="ghost" data-act="mute" aria-label="効果音の切り替え">${muted?"音 ×":"音 ♪"}</button><button class="ghost" data-act="menu">メニュー</button></div>
+  </div>
+  <div class="paper trend"><b>今年の流行</b>${G.ltrend?`<span class="tg lt">間取り：${G.ltrend}</span>`:""}${trendNames().map(n=>`<span class="tg">${n}</span>`).join("")}</div>
+  ${G.news.length?`<div class="paper news"><b>${ym(G.month)}のできごと</b><ul>${G.news.map(n=>`<li>${n}</li>`).join("")}</ul></div>`:""}
+  <div class="tabs">${tabs.map(t=>`<button class="${UI.tab===t[0]?"on":""}" data-act="tab" data-t="${t[0]}">${t[1]}</button>`).join("")}</div>
+  <div class="paper body">${{my:tabMy,market:tabMarket,build:tabBuild,office:tabOffice,catalog:tabCatalog,log:tabLog}[UI.tab]()}</div>`;
+  if(G.over)showOver();
+}
+function menuHTML(){
+  const sv=loadG();
+  return `<div class="paper menu">
+    <div class="logo">ROOM <span>OVER!</span></div>
+    <div class="catch">部屋をいっぱいにして稼ごう！</div>
+    <div class="sub">間取りを作る・買う・貸す・売る。不動産ゲーム</div>
+    ${UI.menu==="level"?`<b>レベルを選んでください</b><div class="lv">${Object.keys(LV).map(k=>`<button data-act="start" data-lv="${k}"><b>${LV[k].n}</b>初期資金 ${yen(LV[k].money)}<br>${LV[k].d}</button>`).join("")}</div>
+      <div class="mrow" style="margin-top:14px"><button class="ghost" data-act="back">もどる</button></div>`
+    :`<div class="mrow"><button class="red" data-act="newgame">ゲーム作成</button>${sv?`<button data-act="continue">つづきから（${LV[sv.lv].n}・${ym(sv.month)}）</button>`:""}<button class="ghost" data-act="studio">ルーム作成</button></div>
+      <p class="sub" style="margin:18px auto 0;max-width:38em;text-align:left">あそびかた：行動を1つするごとに1ヶ月が進みます。リノベーションして賃貸サイトに掲載し、家賃収入で物件を増やしましょう。設備と間取りの流行は1年ごとに変わります。築年数や事故物件はマイナス評価です。「ルーム作成」で作った部屋のデザインは、ゲーム中のリノベーションや建築で使えます。間取りはマス目で自由に描け、リノベーション時は3Dで確認できます。</p>`}
+  </div>`;
+}
+function badges(u){
+  const s={vacant:'<span class="bd">空室</span>',list:'<span class="bd list">募集中</span>',rent:'<span class="bd rent">入居中</span>',sale:'<span class="bd sale">売出中</span>'}[u.st];
+  return s+(u.accident?'<span class="bd bad">事故物件</span>':"")+(u.defect?'<span class="bd bad">瑕疵あり</span>':"")+(u.age<60&&!u.accident?'<span class="bd new">築浅</span>':"");
+}
+const meta=u=>`${typeName(u)}・${area(u)}㎡・築${Math.floor(u.age/12)}年${u.sinceReno<u.age?`（リノベ後${Math.floor(u.sinceReno/12)}年）`:""}`;
+function tabMy(){
+  const cards=G.units.map(u=>{
+    let info="",btn="";
+    if(u.st==="rent"){info=`家賃 <b>${man(u.rent)}</b>／月・入居${u.stay}ヶ月目`;btn=`<span class="meta">入居中は手を入れられません</span>`}
+    else if(u.st==="list"){info=`募集家賃 <b>${man(u.rent)}</b>（反響 ${mark(rentChance(u,u.rent))}）`;btn=`<button class="ghost" data-act="unlist" data-id="${u.id}">取り下げ</button>`}
+    else if(u.st==="sale"){info=`売出価格 <b>${yen(u.ask)}</b>（反響 ${mark(saleChance(u,u.ask))}）`;btn=`<button class="ghost" data-act="unlist" data-id="${u.id}">取り下げ</button>`}
+    else btn=`<button data-act="reno" data-id="${u.id}">リノベーション</button><button class="red" data-act="list" data-id="${u.id}">賃貸サイトに掲載</button><button class="ghost" data-act="sale" data-id="${u.id}">売りに出す</button>`;
+    return `<div class="card">${u.st==="rent"?'<div class="stamp">成約済</div>':""}<h3>${u.name}</h3><div>${badges(u)}</div>${plan(u)}
+      <div class="meta">${meta(u)}</div><div>適正家賃 <b>${man(fair(u))}</b>・評価額 <b>${yen(value(u))}</b></div>
+      ${info?`<div>${info}</div>`:""}${scoreBox(u)}${equip(u)}<div class="row">${btn}</div></div>`}).join("");
+  const b=G.builds.map(b=>`<div class="card"><h3>${b.name}</h3><div><span class="bd list">建築中</span></div>
+    <div class="meta">${typeName(b)}×${b.floors}階建て${b.floors>=4?"（エレベーター付き）":""}</div><div>完成まで あと <b>${b.left}ヶ月</b></div></div>`).join("");
+  return `<p class="note">行動（リノベ・掲載・売り出し・購入・建築・紹介）をするたびに1ヶ月が進みます。取り下げは時間がかかりません。維持費は1部屋につき月1万円。</p>
+    <div class="grid">${cards}${b}</div>${!G.units.length&&!G.builds.length?"<p>物件がありません。「業者から買う」で仕入れましょう。</p>":""}`;
+}
+function tabMarket(){
+  return `<p class="note">業者が持ち込んだ間取りです（毎月入れ替わり）。${G.lv==="small"?"このレベルの業者は信頼できます。":G.lv==="nomal"?"評判は参考になりますが、たまに外れます。隠れた瑕疵に注意。":"評判はあてになりません。設備と築年数を自分で見極めましょう。"}</p>
+  <div class="grid">${G.offers.map((o,i)=>`<div class="card"><h3>${o.u.name}</h3>${plan(o.u)}<div class="meta">${meta(o.u)}</div>
+    <div class="price">${yen(o.price)}</div><div class="meta">${o.hint}</div>
+    <div><b>${o.gyo}</b> <span class="stars">${"★".repeat(Math.round(o.stars))}${"☆".repeat(5-Math.round(o.stars))}</span> ${o.stars.toFixed(1)}<br><span class="meta">口コミ「${o.rev}」</span></div>
+    ${equip(o.u)}<div class="row"><button class="red" data-act="buy" data-i="${i}" ${G.money<o.price?"disabled":""}>買う</button></div></div>`).join("")}</div>`;
+}
+function tabBuild(){
+  return `<p class="note">土地を買って自分の間取りでマンションを建てます。業者から買うよりかなり高くつきますが、新築で好きな設備にでき、階数ぶんの部屋が一度に手に入ります。</p>
+  <ul><li>建築期間：1〜4階は1年。5階以上は1階ごとに+1ヶ月</li><li>4階以上はエレベーターが必須（+600万円）</li><li>費用：土地代＋（建築費＋設備費）×階数</li></ul>
+  <button class="red" data-act="buildOpen">間取りを設計して建てる</button>`;
+}
+function tabOffice(){
+  if(!G.office)return `<p class="note">事務所を作ると、毎月お客さんが来店します。希望に合う物件を直接紹介すれば、賃貸サイトより決まりやすく、購入希望者には高く売れます。（開設300万円・維持費 月5万円）</p>
+    <button class="red" data-act="office" ${G.money<300?"disabled":""}>事務所を開設する（300万円）</button>`;
+  if(!G.cust.length)return `<p>今月は来店客がいません。翌月をお待ちください。</p>`;
+  return `<p class="note">来店中のお客さん（毎月入れ替わり）。空室・募集中・売出中の物件を紹介できます。</p>
+  <div style="display:grid;gap:8px">${G.cust.map((c,i)=>`<div class="cust"><div class="face" style="background:hsl(${c.hue} 70% 85%)">${c.name[0]}</div>
+    <div style="flex:1"><b>${c.name}</b> <span class="bd ${c.buy?"sale":"list"}">${c.buy?"購入希望":"賃貸希望"}</span><br>
+    「${prefText(c)}」${c.accOK?"「事故物件でも気にしません」":""}<br><span class="meta">予算：${c.buy?yen(c.budget):man(c.budget)+"／月"}</span></div>
+    <button data-act="rec" data-i="${i}">物件を紹介</button></div>`).join("")}</div>`;
+}
+function tabCatalog(){
+  const lay=TPL.map((t,i)=>{const u={grid:tplGrid(i),items:DEF},a=area(u);return `<div class="card"><h3>${t.t}</h3><div><span class="bd">${t.n}</span>${G.ltrend===t.n?'<span class="bd bad">流行中</span>':""}</div>${plan(u)}
+    <div class="meta">${a}㎡・${t.d}</div><div class="meta">建築費の目安：1階あたり ${yen(a*9)}＋設備</div></div>`}).join("");
+  return `<h3 class="sec">間取りカタログ</h3><p class="note">リノベーション・建築・ルーム作成の「間取りカタログから選ぶ」で、そのまま使える見本です。間取りにも流行があり、今年の流行タイプ${G.ltrend?`（<b style="color:#d8141c">${G.ltrend}</b>）`:""}と同じ間取りの部屋はスコアが上がり、入居希望者も増えます。</p>
+  <div class="grid">${lay}</div><h3 class="sec">素材カタログ</h3><p class="note">素材カタログ。価格は40㎡あたりの目安（広さに比例）。<b style="color:#d8141c">流行</b>の設備は1つにつきスコア+5、入居希望者も増えます。和室（畳）は流行から遠ざかるほど年々マイナスになります${G.stale?`（現在 -${Math.min(10,G.stale)}）`:""}。</p>
+  <table><tr><th>分類</th><th>名前</th><th>価格</th><th>グレード</th><th></th></tr>${CAT.map(c=>c.order.map((oi,i)=>[c.items[oi],i,oi]).map(([it,i,oi])=>
+    `<tr>${i===0?`<td rowspan="${c.items.length}"><b>${c.n}</b></td>`:""}<td>${swatch(c.k,oi,1)}${it[0]}</td><td class="n">${it[1]}万円</td><td>${"●".repeat(it[2])}</td><td>${G.trends[c.k]===oi?'<span class="tg">流行中</span>':""}</td></tr>`).join("")).join("")}</table>`;
+}
+function tabLog(){return `<div class="log">${G.log.map(l=>`<div><small>${ym(l.m)}</small>${l.t}</div>`).join("")}</div>`}
+
+/* ===== モーダル ===== */
+function openModal(h){$("modal").innerHTML=`<div class="mbox">${h}</div>`;$("modal").classList.add("on")}
+function closeModal(){V3.stop();$("modal").classList.remove("on");$("modal").innerHTML="";E=null;M=null}
+function edUnit(){if(E.mode==="reno"){const u=unit(E.uid);return Object.assign({},u,{items:E.items,grid:E.grid,sinceReno:0})}
+  return{grid:E.grid,items:E.items,age:0,sinceReno:0,accident:false,defect:false}}
+function cellHTML(k,i){return `<div class="gc${k==="."?" em":""}" data-c="${i}" style="background:${KC[k][2]}">${KC[k][3]}</div>`}
+function renderEd(){
+  const u=edUnit(),reno=E.mode==="reno",t={reno:"リノベーション",build:"間取りを設計して建てる",studio:"ルーム作成"}[E.mode],err=gridErr(E.grid),bad=err.length>0;
+  const view=E.view==="3d"?`<div id="v3" class="v3"></div><div class="meta">ドラッグで回転・ホイールで拡大縮小。設備を選ぶとすぐ反映されます。</div>`
+   :`<div id="v3" class="v3" style="margin-bottom:6px"></div><div class="chips" style="margin-bottom:5px">${KIND.map(k=>`<button class="chip ${E.brush===k[0]?"on":""}" data-act="brush" data-k="${k[0]}"><span class="sw" style="background:${k[2]}"></span>${k[1]}</button>`).join("")}</div>
+    <div id="ge" class="ge">${E.grid.split("").map(cellHTML).join("")}</div>
+    <div class="meta">部屋の種類を選び、マスをなぞって塗ります（1マス＝約1㎡）。塗ったそばから上の3Dに反映されます。${reno?"間取り変更は高額です：基本100万円＋部屋割りの変更1マス15万円＋増築・減築1マス60万円。":""}</div>
+    ${false?"":`<div class="catrow" style="margin-top:8px"><b>間取りカタログから選ぶ</b></div><div class="chips">${TPL.map((t,i)=>`<button class="chip" data-act="tpl" data-i="${i}">${t.t}<small>${t.n}</small>${G&&G.ltrend===t.n?"<i>流行</i>":""}</button>`).join("")}</div>`}`;
+  let side=`<div class="chips" style="margin-bottom:6px"><button class="chip ${E.view==="3d"?"on":""}" data-act="view" data-v="3d">3Dで見る</button><button class="chip ${E.view==="2d"?"on":""}" data-act="view" data-v="2d">${reno?"間取りを変更する（高額）":"間取りを編集"}</button></div>${view}
+    ${bad?`<div class="err">⚠ ${err.join("／")}</div>`:""}
+    <dl class="kv"><dt>間取り</dt><dd>${typeName(u)}・${area(u)}㎡${ltHit(u)?' <span class="tg">流行</span>':""}</dd><dt>魅力スコア</dt><dd>${score(u)}</dd><dt>適正家賃</dt><dd>${man(fair(u))}／月</dd>`,foot="";
+  if(reno){const c=renoCost(unit(E.uid),E.items,E.grid);
+    const lc=layoutCost(unit(E.uid),E.grid);
+    side+=`${lc?`<dt>うち間取り変更</dt><dd style="color:#d8141c">${yen(lc)}</dd>`:""}<dt>工事費</dt><dd>${yen(c)}</dd></dl>`;
+    foot=`<button class="red" data-act="doReno" ${G.money<c||bad?"disabled":""}>この内容で工事する（1ヶ月）</button>`}
+  else if(E.mode==="build"){const c=buildCost(E.grid,E.floors,E.items);
+    side+=`<dt>階数</dt><dd><button class="ghost" data-act="floor" data-d="-1">−</button> ${E.floors}階 <button class="ghost" data-act="floor" data-d="1">＋</button></dd>
+      <dt>エレベーター</dt><dd>${E.floors>=4?"必須（+600万円）":"不要"}</dd><dt>建築期間</dt><dd>${buildTime(E.floors)}ヶ月</dd><dt>総費用</dt><dd>${yen(c)}</dd></dl>`;
+    foot=`<button class="red" data-act="doBuild" ${G.money<c||bad?"disabled":""}>土地を買って着工する</button>`}
+  else{side+=`<dt>設備費の目安</dt><dd>${yen(itemsCost(u,E.items))}</dd></dl>
+      <input type="text" id="dname" maxlength="16" placeholder="デザイン名" value="${E.name||""}">`;
+    foot=`<button class="red" data-act="saveDesign" ${bad?"disabled":""}>このデザインを保存</button>`}
+  const ds=D.length?`<div class="catrow"><b>保存したデザイン${E.mode==="studio"?"":reno?"を適用（間取りも変わります）":"を適用"}</b><div class="chips">${D.map((d,i)=>`<button class="chip" data-act="applyDesign" data-i="${i}">${d.name}</button>${E.mode==="studio"?`<button class="chip" data-act="delDesign" data-i="${i}" aria-label="${d.name}を削除">×</button>`:""}`).join("")}</div></div>`:"";
+  openModalKeep(`<h2>${t}${reno?"："+unit(E.uid).name:""}<button class="ghost" data-act="close">とじる</button></h2>
+   <div class="ed"><div>${side}<div style="margin-top:8px">${foot}</div></div><div>${ds}
+   ${CAT.map(c=>`<div class="catrow"><b>${c.n}</b><div class="chips">${c.order.map(i=>[c.items[i],i]).map(([it,i])=>`<button class="chip ${E.items[c.k]===i?"on":""}" data-act="pick" data-c="${c.k}" data-i="${i}">${swatch(c.k,i)}${it[0]}<small>${it[1]}万</small>${G&&G.trends[c.k]===i?"<i>流行</i>":""}</button>`).join("")}</div></div>`).join("")}</div></div>`);
+  V3.mount($("v3"),u);
+}
+/* ===== 3D表示 ===== */
+const reduce=typeof matchMedia!=="undefined"&&matchMedia("(prefers-reduced-motion:reduce)").matches;
+const V3={tc:{},r:null,raf:0,th:.8,ph:.85,dist:14,zoom:1,auto:true,fail:false,grp:null,
+  init(){
+    if(this.r)return true;if(this.fail||typeof THREE==="undefined")return false;
+    try{
+      this.r=new THREE.WebGLRenderer({antialias:true});this.r.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+      this.scene=new THREE.Scene();this.scene.background=new THREE.Color("#efe9d8");
+      this.cam=new THREE.PerspectiveCamera(40,4/3,.1,300);
+      this.scene.add(new THREE.AmbientLight(0xffffff,.78));
+      const d=new THREE.DirectionalLight(0xffffff,.5);d.position.set(6,12,8);this.scene.add(d);
+      const c=this.r.domElement;c.style.cssText="width:100%;height:auto;display:block;touch-action:none;cursor:grab";
+      let drag=null;
+      c.addEventListener("pointerdown",e=>{drag=[e.clientX,e.clientY];this.auto=false;try{c.setPointerCapture(e.pointerId)}catch(_){}});
+      c.addEventListener("pointermove",e=>{if(!drag)return;this.th-=(e.clientX-drag[0])*.01;this.ph=clamp(this.ph+(e.clientY-drag[1])*.008,.2,1.5);drag=[e.clientX,e.clientY]});
+      const up=()=>{drag=null};c.addEventListener("pointerup",up);c.addEventListener("pointercancel",up);
+      c.addEventListener("wheel",e=>{e.preventDefault();this.zoom=clamp(this.zoom*(e.deltaY>0?1.1:.9),.45,2)},{passive:false});
+      return true;
+    }catch(e){this.fail=true;this.r=null;return false}
+  },
+  mount(host,u){
+    if(!host)return;
+    if(!this.init()){host.innerHTML=plan(u)+'<div class="meta">（この環境では3D表示が使えないため、平面図を表示しています）</div>';return}
+    try{
+      host.appendChild(this.r.domElement);const w=host.clientWidth||320;this.r.setSize(w,Math.round(w*.75),false);
+      this.build(u);cancelAnimationFrame(this.raf);
+      const tick=()=>{if(!this.r||!this.r.domElement.isConnected)return;if(this.auto&&!reduce)this.th+=.004;
+        const d=this.dist*this.zoom,cp=Math.cos(this.ph);this.cam.position.set(Math.sin(this.th)*cp*d,Math.sin(this.ph)*d,Math.cos(this.th)*cp*d);
+        this.cam.lookAt(0,.6,0);this.r.render(this.scene,this.cam);this.raf=requestAnimationFrame(tick)};
+      tick();
+    }catch(e){this.fail=true;host.innerHTML=plan(u)}
+  },
+  stop(){cancelAnimationFrame(this.raf)},
+  build(u){
+    if(this.grp){this.scene.remove(this.grp);this.grp.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose()})}
+    const g=new THREE.Group();this.grp=g;this.scene.add(g);
+    const gr=u.grid,it=u.items;let x0=GW,y0=GH,x1=0,y1=0;const cells={};
+    for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const k=at(gr,x,y);if(k===".")continue;
+      x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y);(cells[k]||(cells[k]=[])).push([x,y])}
+    if(x1<x0)return;
+    const ox=(x0+x1+1)/2,oz=(y0+y1+1)/2;this.dist=Math.max(x1-x0+1,y1-y0+1)*1.2+6;
+    const mat=(c,o)=>new THREE.MeshLambertMaterial(Object.assign({color:new THREE.Color(c)},o||{}));
+    const box=(w,h,d,x,y,z,m)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x-ox,y,z-oz);g.add(b);return b};
+    const tex=k=>{const t=TEX[k];if(!t)return null;if(!this.tc[k]){const m=new THREE.CanvasTexture(t.cv);m.wrapS=m.wrapT=THREE.RepeatWrapping;this.tc[k]=m}return this.tc[k]};
+    const tmat=(k,fb)=>{const m=tex(k);return m?new THREE.MeshLambertMaterial({map:m}):mat(fb)};
+    const wmat=c=>{const m=tex("wood");return m?new THREE.MeshLambertMaterial({map:m,color:new THREE.Color(c)}):mat(c)};
+    const fl=(x,y,m)=>{const ge=new THREE.PlaneGeometry(1,1);ge.rotateX(-Math.PI/2);const p=ge.attributes.position,uv=ge.attributes.uv;
+      for(let i=0;i<p.count;i++)uv.setXY(i,(p.getX(i)+x+.5)/2,(p.getZ(i)+y+.5)/2);const me=new THREE.Mesh(ge,m);me.position.set(x+.5-ox,0,y+.5-oz);g.add(me)};
+    const mF=tmat("floor"+it.floor,FLOORC[it.floor]),mWet=tmat("wet","#cfe3ec"),mEnt=tmat("ent","#c9c9c9"),mWall=tmat("wall"+it.wall,WALL3[it.wall]),mWhite=mat("#ffffff"),
+      mDoor=wmat(["#c9a36b","#a8763e","#6b4a2a","#2b2b2b"][it.door]),mGlass=mat("#6ec3f0",{transparent:true,opacity:.55,side:THREE.DoubleSide});
+    Object.keys(cells).forEach(k=>{const m=(LIVING.includes(k)||k==="K"||k==="C")?mF:k==="E"?mEnt:mWet;cells[k].forEach(c=>fl(c[0],c[1],m))});
+    const ed=edges(gr),NRM={n:[0,1,0],s:[0,-1,Math.PI],w:[1,0,Math.PI/2],e:[-1,0,-Math.PI/2]};
+    let wi=0,door=false;const step=[4,3,2,1][it.window],wh=[.8,1,1.2,1.9][it.window];
+    ed.outer.forEach(e=>{const n=NRM[e.s],px=e.s==="w"?e.x:e.s==="e"?e.x+1:e.x+.5,pz=e.s==="n"?e.y:e.s==="s"?e.y+1:e.y+.5;
+      const wg=new THREE.PlaneGeometry(1,2.4),wp=wg.attributes.position,wu=wg.attributes.uv,al=(e.s==="n"||e.s==="s")?e.x+.5:e.y+.5;
+      for(let i=0;i<wp.count;i++)wu.setXY(i,(wp.getX(i)+al)/2,(wp.getY(i)+1.2)/2);
+      const p=new THREE.Mesh(wg,mWall);p.position.set(px-ox,1.2,pz-oz);p.rotation.y=n[2];g.add(p);
+      if(LIVING.includes(e.k)&&(wi++%step===0)){const w=new THREE.Mesh(new THREE.PlaneGeometry(.8,wh),mGlass);
+        w.position.set(px-ox+n[0]*.03,it.window===3?1.15:1.4,pz-oz+n[1]*.03);w.rotation.y=n[2];g.add(w)}
+      if(e.k==="E"&&!door){door=true;const h=e.s==="n"||e.s==="s";box(h?.8:.08,2,h?.08:.8,px+n[0]*.06,1,pz+n[1]*.06,mDoor)}});
+    ed.inner.forEach(e=>{if(e.door)return;if(e.s==="e")box(.08,1.2,1,e.x+1,.6,e.y+.5,mWall);else box(1,1.2,.08,e.x+.5,.6,e.y+1,mWall)});
+    let c;
+    if(c=cells.K){const mTop=mat(["#bdbdbd","#d9d9d9","#f3f3f3","#3a3a3a"][it.kitchen]),mB=mat(it.stove===3?"#111111":"#b02020");
+      c.slice(0,Math.min(c.length,it.kitchen+1)).forEach(p=>{box(.9,.8,.9,p[0]+.5,.4,p[1]+.5,mWhite);box(.92,.06,.92,p[0]+.5,.83,p[1]+.5,mTop)});
+      const n=[1,2,3,3][it.stove];for(let i=0;i<n;i++)box(.18,.04,.18,c[0][0]+.25+i*.25,.88,c[0][1]+.5,mB)}
+    if(c=cells.B){const p=c[0];box(.86,.5,.86,p[0]+.5,.25,p[1]+.5,mWhite);box(.7,.02,.7,p[0]+.5,.51,p[1]+.5,mat(["#9fd3ee","#7cc4e8","#5ab4e0","#3a9fd8"][it.bath]))}
+    if(c=cells.T){const p=c[0];box(.4,.4,.5,p[0]+.5,.2,p[1]+.55,mWhite);box(.4,[.7,.7,.45,.45][it.toilet],.16,p[0]+.5,.35,p[1]+.2,mWhite)}
+    if(c=cells.W){const p=c[0];box(.7,.8,.45,p[0]+.5,.4,p[1]+.3,mWhite);box(.6,.6,.04,p[0]+.5,1.5,p[1]+.08,mat("#bfe3f5"))}
+    if(c=cells.C){const m=wmat(["#b9a27c","#e8e2d2","#8a6a45","#3d2f24"][it.closet]);c.forEach(p=>box(.9,1.7,.9,p[0]+.5,.85,p[1]+.5,m))}
+    if((c=cells.L)&&it.shelf>0){const p=c[0],h=[0,.9,1.5,2.1][it.shelf];box(.9,h,.28,p[0]+.5,h/2,p[1]+.18,wmat("#8a6a45"))}
+  }
+};
+let painting=false;
+function paintAt(e){const el=document.elementFromPoint(e.clientX,e.clientY),c=el&&el.closest&&el.closest(".gc");if(!c||!E)return;
+  const i=+c.dataset.c,b=E.brush;if(E.grid[i]===b)return;
+  E.grid=E.grid.slice(0,i)+b+E.grid.slice(i+1);c.outerHTML=cellHTML(b,i);
+  if(V3.r&&!V3.fail){try{V3.build(edUnit())}catch(_){}}}
+function openModalKeep(h){const m=$("modal"),sc=m.scrollTop;m.innerHTML=`<div class="mbox">${h}</div>`;m.classList.add("on");m.scrollTop=sc}
+function renderPrice(){
+  const u=unit(M.uid),rent=M.kind==="list",base=rent?fair(u):value(u),v=rent?r1(base*M.pct/100):Math.round(base*M.pct/100);M.v=v;
+  const p=rent?rentChance(u,v):saleChance(u,v);
+  openModalKeep(`<h2>${rent?"賃貸サイト「ヘヤミチル」に掲載":"売りに出す"}：${u.name}<button class="ghost" data-act="close">とじる</button></h2>
+   <div class="ed"><div>${plan(u)}<div class="meta">${meta(u)}</div></div><div>
+   <dl class="kv"><dt>${rent?"適正家賃":"評価額"}</dt><dd>${rent?man(base):yen(base)}</dd><dt>${rent?"募集家賃":"売出価格"}</dt><dd id="pv" style="font-size:22px;color:#d8141c">${rent?man(v)+"／月":yen(v)}</dd><dt>反響予想</dt><dd id="pm">${mark(p)}</dd></dl>
+   <label for="pr">価格設定（適正の<span id="pp">${M.pct}</span>%）</label><input type="range" id="pr" min="70" max="150" value="${M.pct}">
+   <p class="note">高くするほど決まりにくくなります。流行の設備が多いほど反響が増えます。</p>
+   <button class="red" data-act="doPrice">${rent?"掲載する":"売りに出す"}（1ヶ月）</button></div></div>`);
+}
+function renderRec(){
+  const c=G.cust[M.ci],us=G.units.filter(u=>u.st==="vacant"||u.st==="list"||(c.buy&&u.st==="sale"));
+  openModal(`<h2>${c.name}に紹介する物件<button class="ghost" data-act="close">とじる</button></h2>
+   <p class="note">「${prefText(c)}」／予算 ${c.buy?yen(c.budget):man(c.budget)+"／月"}。成約してもしなくても1ヶ月が進みます。</p>
+   ${us.length?`<div class="grid">${us.map(u=>{const a=custAsk(u,c);return `<div class="card"><h3>${u.name}</h3><div>${badges(u)}</div>${plan(u)}<div class="meta">${meta(u)}</div>
+     <div>提示：<b>${c.buy?yen(a):man(a)+"／月"}</b></div><div>手ごたえ：<b>${mark(match(u,c)-.15)}</b></div>${equip(u)}
+     <div class="row"><button class="red" data-act="doRec" data-id="${u.id}">この物件を紹介</button></div></div>`}).join("")}</div>`:"<p>紹介できる空き物件がありません。</p>"}`);
+}
+function showOver(){
+  openModal(`<h2>倒産…</h2><p>資金のマイナスが6ヶ月続き、会社をたたむことになりました。</p>
+   <dl class="kv"><dt>経営期間</dt><dd>${ym(G.month)}</dd><dt>最終資産</dt><dd>${yen(netWorth())}</dd></dl><button class="red" data-act="quit">メニューへ</button>`);
+}
+
+/* ===== 操作 ===== */
+const ACT={
+  mute(){muted=!muted;try{localStorage.setItem("roomover_mute",muted?"1":"0")}catch(e){}render()},
+  newgame(){UI.menu="level";render()},back(){UI.menu="top";render()},
+  start(d){UI.menu="top";start(d.lv)},
+  continue(){const s=loadG();if(s){s.units.forEach(mig);s.builds.forEach(mig);s.offers.forEach(o=>mig(o.u));G=s;UI.tab="my";render()}},
+  menu(){saveG();G=null;UI.menu="top";closeModal();render()},
+  quit(){saveG();G=null;UI.menu="top";closeModal();render()},
+  tab(d){UI.tab=d.t;render()},
+  next(){log("何もせずに1ヶ月を過ごした。");advance()},
+  close(){closeModal()},
+  studio(){E={mode:"studio",view:"2d",brush:"L",grid:tplGrid(1),items:randItems(.5),name:""};renderEd()},
+  reno(d){const u=unit(d.id);E={mode:"reno",view:"3d",brush:"L",uid:u.id,grid:u.grid,items:Object.assign({},u.items)};V3.auto=true;renderEd()},
+  buildOpen(){E={mode:"build",view:"2d",brush:"L",grid:tplGrid(1),floors:3,items:randItems(.4)};renderEd()},
+  pick(d){keepName();E.items[d.c]=+d.i;renderEd()},
+  view(d){keepName();E.view=d.v;renderEd()},
+  brush(d){keepName();E.brush=d.k;renderEd()},
+  tpl(d){keepName();E.grid=tplGrid(+d.i);renderEd()},
+  floor(d){E.floors=clamp(E.floors+(+d.d),1,12);renderEd()},
+  applyDesign(d){keepName();const x=D[+d.i];E.items=Object.assign({},x.items);E.grid=x.grid;renderEd()},
+  delDesign(d){keepName();D.splice(+d.i,1);saveD();renderEd()},
+  saveDesign(){keepName();if(gridErr(E.grid).length)return;const n=(E.name||"").trim()||"デザイン"+(D.length+1);D.push({name:n,grid:E.grid,items:Object.assign({},E.items)});if(D.length>12)D.shift();saveD();E.name="";renderEd()},
+  doReno(){const u=unit(E.uid);let c=renoCost(u,E.items,E.grid);if(G.money<c||gridErr(E.grid).length)return;
+    if(E.grid!==u.grid)log(`📐 ${u.name} の間取りを変更した（${typeName({grid:E.grid})}・${E.grid.replace(/\./g,"").length}㎡）。`);
+    u.items=Object.assign({},E.items);u.grid=E.grid;u.sinceReno=0;u.defect=false;
+    if(Math.random()>L().pGood&&Math.random()<.5){const x=Math.round(c*.2);c+=x;log(`💢 ${u.name} の工事で業者から追加費用 ${yen(x)} を請求された。`)}
+    G.money=r1(G.money-c);log(`🔨 ${u.name} をリノベーションした（${yen(c)}）。`);fxLabel="工事完了！";advance()},
+  doBuild(){const c=buildCost(E.grid,E.floors,E.items);if(G.money<c||gridErr(E.grid).length)return;
+    const b={name:bname(),grid:E.grid,floors:E.floors,items:Object.assign({},E.items),left:buildTime(E.floors),cost:c};
+    G.builds.push(b);G.money=r1(G.money-c);log(`🏗 土地を買い、${b.name}（${typeName(b)}×${b.floors}階）を着工した（${yen(c)}）。`);fxLabel="着工！";advance()},
+  list(d){M={kind:"list",uid:+d.id,pct:100};renderPrice()},
+  sale(d){M={kind:"sale",uid:+d.id,pct:100};renderPrice()},
+  doPrice(){const u=unit(M.uid);if(M.kind==="list"){u.st="list";u.rent=M.v;log(`📝 ${u.name} を家賃 ${man(M.v)} で賃貸サイトに掲載した。`);fxLabel="掲載！"}
+    else{u.st="sale";u.ask=M.v;log(`🏷 ${u.name} を ${yen(M.v)} で売りに出した。`);fxLabel="売出し！"}advance()},
+  unlist(d){const u=unit(d.id);u.st="vacant";saveG();render()},
+  buy(d){const o=G.offers[+d.i];if(!o||G.money<o.price)return;const u=o.u;u.id=G.nid++;
+    G.money=r1(G.money-o.price);G.units.push(u);log(`🏠 ${o.gyo} から ${u.name} を ${yen(o.price)} で買った。`);fxLabel="購入！";
+    if(o.hd){u.defect=true;log(`💧 ${u.name} に隠れた瑕疵（雨漏り）が見つかった…リノベーションで直せる。`)}
+    if(o.ha){u.accident=true;log(`👻 ${u.name} は告知されていない事故物件だった…`)}
+    advance()},
+  office(){if(G.money<300)return;G.money=r1(G.money-300);G.office=true;log("🏢 事務所を開設した！");fxLabel="開業！";advance()},
+  rec(d){M={kind:"rec",ci:+d.i};renderRec()},
+  doRec(d){const c=G.cust[M.ci],u=unit(d.id),a=custAsk(u,c);
+    if(Math.random()<match(u,c)){if(c.buy){G.money=r1(G.money+a);G.units=G.units.filter(x=>x!==u);log(`🤝 ${c.name}が ${u.name} を ${yen(a)} で購入！`);fxLabel="売却！"}
+      else{u.st="rent";u.rent=a;u.stay=0;log(`🔑 ${c.name}が ${u.name} に入居を決めた！（家賃 ${man(a)}）`);fxLabel="成約！"}}
+    else log(`🙇 ${c.name}に ${u.name} を紹介したが、決まらなかった。`);fxLabel="残念…";
+    advance()}
+};
+function keepName(){const n=$("dname");if(n&&E)E.name=n.value}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b||b.disabled)return;const f=ACT[b.dataset.act];if(f){beep(SND.click);f(b.dataset)}});
+document.addEventListener("input",e=>{
+  if(e.target.id==="pr"&&M){M.pct=+e.target.value;const u=unit(M.uid),rent=M.kind==="list",base=rent?fair(u):value(u);
+    M.v=rent?r1(base*M.pct/100):Math.round(base*M.pct/100);
+    $("pv").textContent=rent?man(M.v)+"／月":yen(M.v);$("pp").textContent=M.pct;$("pm").textContent=mark(rent?rentChance(u,M.v):saleChance(u,M.v))}
+});
+document.addEventListener("pointerdown",e=>{if(E&&e.target.closest&&e.target.closest("#ge")){painting=true;keepName();paintAt(e);e.preventDefault()}});
+document.addEventListener("pointermove",e=>{if(painting)paintAt(e)});
+const endPaint=()=>{if(painting){painting=false;if(E)renderEd()}};
+document.addEventListener("pointerup",endPaint);document.addEventListener("pointercancel",endPaint);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("modal").classList.contains("on")&&!(G&&G.over))closeModal()});
+if(typeof window!=="undefined")window.__RO={start,advance,ACT,get G(){return G}};
+render();
+})();
+</script>
+</body>
+</html>
